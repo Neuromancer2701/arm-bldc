@@ -116,23 +116,7 @@ private:
 	void CalculatePWM();
     void SetStateIO();
 
-	enum serialConstants
-	{
-		BEGINNING = 'B',
-		VELOCITY  = 'V',
-		PWM       = 'P',
-		GAINS     = 'G',
-		CURRENT   = 'C',
-		START     = 'S',
-		DIRECTION = 'D',
-		READ      = 'R',
-		WRITE     = 'W',
-		END       = '\n',
-		MIN_SIZE  = 3,
-		BUFFER_SIZE = 16,
-		GAIN_SIZE = 4
 
-	};
 
 	enum velocityConstants
 	{
@@ -152,7 +136,6 @@ private:
 		CHANGING = 2
 	};
 
-	char serialBuffer[BUFFER_SIZE];
 	changeDirection directionState;
 
 

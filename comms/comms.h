@@ -5,6 +5,7 @@
 #define __COMMS_H__
 
 #include <vector>
+#include <Serial.h>
 
 class Comms {
 public:
@@ -15,6 +16,7 @@ public:
     
 private:
     std::vector<char> serialBuffer;
+    Serial          serial(USBTX, USBRX);
 
     void Parse();
     int findStart(int size);
@@ -23,7 +25,25 @@ private:
     void parseGains(int index);
     void parseCurrent();
     void parseStart(int index);
-    void parseDirection(int index)
+    void parseDirection(int index);
+
+    enum serialConstants
+    {
+        BEGINNING = 'B',
+        VELOCITY  = 'V',
+        PWM       = 'P',
+        GAINS     = 'G',
+        CURRENT   = 'C',
+        START     = 'S',
+        DIRECTION = 'D',
+        READ      = 'R',
+        WRITE     = 'W',
+        END       = '\n',
+        MIN_SIZE  = 3,
+        BUFFER_SIZE = 16,
+        GAIN_SIZE = 4
+
+    };
     
 }
     
