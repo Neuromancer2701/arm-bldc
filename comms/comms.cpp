@@ -3,72 +3,86 @@
 
 #include "comms.h"
 
+Comms::Comms() : serial(USBTX, USBRX), messageReceived(false)
+{
+    serial.baud(BAUD);
+    serial.attach(this,&Comms::messageReceive, MODSERIAL::RxAutoDetect);
+    serial.autoDetectChar('\n');
+}
+
+
 void Comms::ProcessMessages()
 {
     Parse();
 }
 
+void Comms::messageReceive(MODSERIAL_IRQ_INFO *q)
+{
+    MODSERIAL *sys = q->serial;
+    serialBuffer.resize(BUFFER_SIZE);
+    sys->move(serialBuffer.data(), BUFFER_SIZE);
+    messageReceived = true;
+    return 0;
+}
+
 
 void Comms::Parse()
 {
-    int readBytes = Serial.available();
-    if(readBytes >= MIN_SIZE)
+
+    if(messageReceived && findStart())
     {
 
         //Serial.print("readBytes: ");
         //Serial.println(readBytes);
 
-        if(readBytes > BUFFER_SIZE)
-            readBytes = BUFFER_SIZE;
-        if(Serial.readBytesUntil(END, serialBuffer, BUFFER_SIZE) > 0)
+        //Serial.print(serialBuffer);
+
+        unsigned char command = serialBuffer[1];//move to comamand character
+        switch(command)
         {
-            int index = findStart(readBytes);
-
-            //Serial.print(serialBuffer);
-
-            if(index >= 0)
-            {
-                index++;  //move to comamand character
-                unsigned char command = serialBuffer[index];
-                switch(command)
-                {
-                    case VELOCITY:
-                        parseVelocity(index);
-                        break;
-                    case PWM:
-                        parsePWM();
-                        break;
-                    case GAINS:
-                        parseGains(index);
-                        break;
-                    case CURRENT:
-                        parseCurrent();
-                        break;
-                    case START:
-                        parseStart(index);
-                        break;
-                    case DIRECTION:
-                        parseDirection(index);
-                        break;
-                    default:
-                        break;
-                }
-
-            }
+            case VELOCITY:
+                parseVelocity(index);
+                break;
+            case PWM:
+                parsePWM();
+                break;
+            case GAINS:
+                parseGains(index);
+                break;
+            case CURRENT:
+                parseCurrent();
+                break;
+            case START:
+                parseStart(index);
+                break;
+            case DIRECTION:
+                parseDirection(index);
+                break;
+            default:
+                break;
         }
     }
-
 }
 
-int Comms::findStart(int size)
+bool Comms::findStart()
 {
-    for(int i = 0; i < size;i++)
+    int counter = 0;
+    for(for auto& single:serialBuffer)
     {
-        if(serialBuffer[i] == BEGINNING)
-            return i;
+        if(single == BEGINNING)
+        {
+            serialBuffer.erase(begin(serialBuffer), begin(serialBuffer) + counter);
+            return  true;
+        }
+        counter++;
     }
 
-    return -1;
+    return false;
+}
+
+void Comms::Send(int data)
+{
+    serial.printf("B%04d\n",data);
 }
 
 void Comms::parseVelocity(int index)
@@ -78,7 +92,6 @@ void Comms::parseVelocity(int index)
     {
         Send((int)(velocity * MULTIPLIER));
     }
-
     else if(serialBuffer[index] == WRITE)
     {
         char velocity[2];
@@ -139,14 +152,6 @@ void Comms::parseCurrent()
     Send((int)(current * MULTIPLIER));
 }
 
-void Comms::Send(int data)
-{
-    char sendBuffer[BUFFER_SIZE];
-    snprintf(sendBuffer,BUFFER_SIZE,"B%d\n",data);
-    Serial.print(sendBuffer);
-    Serial.flush();
-}
-
 void Comms::parseStart(int index)
 {
     index++;  // moved to read/write character
@@ -176,3 +181,4 @@ void Comms::parseDirection(int index)
         Send((int)forward);
     }
 }
+

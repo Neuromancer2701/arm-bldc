@@ -5,7 +5,7 @@
 #define __COMMS_H__
 
 #include <vector>
-#include <Serial.h>
+#include "MODSERIAL.h"
 
 class Comms {
 public:
@@ -16,16 +16,19 @@ public:
     
 private:
     std::vector<char> serialBuffer;
-    Serial          serial(USBTX, USBRX);
+    MODSERIAL         serial;
+    bool messageReceived;
 
     void Parse();
-    int findStart(int size);
+    bool findStart();
     void parseVelocity(int index);
     void parsePWM();
     void parseGains(int index);
     void parseCurrent();
     void parseStart(int index);
     void parseDirection(int index);
+    void messageReceive(MODSERIAL_IRQ_INFO *q);
+    void Send(int data);
 
     enum serialConstants
     {
@@ -41,7 +44,9 @@ private:
         END       = '\n',
         MIN_SIZE  = 3,
         BUFFER_SIZE = 16,
-        GAIN_SIZE = 4
+        GAIN_SIZE = 4,
+        BAUD  = 115200
+
 
     };
     
