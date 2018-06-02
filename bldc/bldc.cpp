@@ -1,45 +1,40 @@
-#include "Arduino.h"
+
 #include "bldc.h"
-#include "SoftPWM.h"
 
-
+#if 0
 SOFTPWM_DEFINE_CHANNEL(AH_INDEX, DDRD, PORTD, PORTD4);  //Arduino pin 4
 SOFTPWM_DEFINE_CHANNEL(BH_INDEX, DDRB, PORTB, PORTB1);  //Arduino pin 9
 SOFTPWM_DEFINE_CHANNEL(CH_INDEX, DDRD, PORTD, PORTD5);  //Arduino pin 5
 
 SOFTPWM_DEFINE_OBJECT_WITH_PWM_LEVELS(3, 100);
 SOFTPWM_DEFINE_EXTERN_OBJECT_WITH_PWM_LEVELS(3, 100);
-
+#endif
 commumationStates startSeqeunce[BLDC::COMMUTATION_STATES] = {State1, State2, State3, State4, State5, State6};
 
 BLDC::BLDC()
 {
     cycleCounter = 0;
-    forward = true;
+
     directionState = FORWARD;
-    started = false;
+
     currentCommunationState = State6;
     newCommunationState =  State6;
-    velocity = 0.0;
+
     previousTime = 0;
     currentTime = 0;
-
-    P_gain = 1.0;
-    I_gain = 1.0;
-    targetVelocity = 0.0;
     error = previousError = 0.0;
-    controlPWM = 0;
+    communication.setData(data);
 
-    pinMode(HALL1, INPUT);
-    pinMode(HALL2, INPUT);
-    pinMode(HALL3, INPUT);
+    //pinMode(HALL1, INPUT);
+    //pinMode(HALL2, INPUT);
+    //pinMode(HALL3, INPUT);
 
-    pinMode(AL, OUTPUT);
-    pinMode(BL, OUTPUT);
-    pinMode(CL, OUTPUT);
-    digitalWrite(AL, 0);
-    digitalWrite(BL, 0);
-    digitalWrite(CL, 0);
+    //pinMode(AL, OUTPUT);
+    //pinMode(BL, OUTPUT);
+    //pinMode(CL, OUTPUT);
+    //digitalWrite(AL, 0);
+    //digitalWrite(BL, 0);
+    //digitalWrite(CL, 0);
 
 }
 
@@ -51,47 +46,50 @@ BLDC::~BLDC()
 void BLDC::initPWM()
 {
     // begin with 500 pwm frequency
-    Palatis::SoftPWM.begin(500);
+   // Palatis::SoftPWM.begin(500);
 
     // print interrupt load for diagnostic purposes
-    Palatis::SoftPWM.printInterruptLoad();
+    //Palatis::SoftPWM.printInterruptLoad();
 
-    Palatis::SoftPWM.allOff();
+    //Palatis::SoftPWM.allOff();
 }
 
 void BLDC::ReadHalls()
 {
-    RawHallData[HALL1_INDEX] = digitalRead(HALL1);
-    RawHallData[HALL2_INDEX] = digitalRead(HALL2);
-    RawHallData[HALL3_INDEX] = digitalRead(HALL3);
+    //RawHallData[HALL1_INDEX] = digitalRead(HALL1);
+    //RawHallData[HALL2_INDEX] = digitalRead(HALL2);
+    //RawHallData[HALL3_INDEX] = digitalRead(HALL3);
     newCommunationState = (commumationStates)((RawHallData[HALL1_INDEX] << HALL1_SHIFT) | (RawHallData[HALL2_INDEX] << HALL2_SHIFT) | RawHallData[HALL3_INDEX]);
 }
 
 
 void BLDC::Control()
 {
-
+#if 0
     ReadHalls();
     if(started || directionState == CHANGING)
     {
         CalculateCommutationState();
     }
-
-    ProcessMessages();
+#endif
+    communication.ProcessMessages();
 }
 
 void BLDC::InputTest()
 {
+#if 0
     controlPWM = 50;
     ReadHalls();
     currentCommunationState = newCommunationState;
     SetStateIO();
 
     delay(100);
+#endif
 }
 
 void BLDC::FullCycleTest()
 {
+#if 0
     controlPWM = 50;
     unsigned long Delay = 1000;
 
@@ -120,12 +118,13 @@ void BLDC::FullCycleTest()
     currentCommunationState = State6;
     SetStateIO();
     delay(Delay);
-
+#endif
 }
 
 
 void BLDC::CalculateCommutationState()
 {
+#if 0
     if(newCommunationState == currentCommunationState)
     {
         previousTime = currentTime;
@@ -163,12 +162,12 @@ void BLDC::CalculateCommutationState()
 
     //sprintf(data,"state: %d cycle count: %d velocity: %05d", currentCommunationState, cycleCounter,(int)(velocity * 1000));
     SetStateIO();
-
+#endif
 }
 
 void BLDC::SetStateIO()
 {
-
+#if 0
     PORTB = 0x00; //clear io to give a bit of rest time between states. To prevent shoot through.
     Palatis::SoftPWM.allOff();
 
@@ -265,6 +264,7 @@ void BLDC::SetStateIO()
 
     Palatis::SoftPWM.set(highSideIndex, controlPWM);
     PORTB = lowSide;
+#endif
 }
 
 int *BLDC::getRawHallData()
@@ -275,6 +275,8 @@ int *BLDC::getRawHallData()
 
 void BLDC::startMotor(bool start)
 {
+    #if 0
+
     if(start)
     {
         started = true;
@@ -287,22 +289,27 @@ void BLDC::startMotor(bool start)
         controlPWM = DUTY_STOP;
         started = false;
     }
-
+#endif
 }
 
 int BLDC::findIndex(commumationStates state)
 {
+#if 0
     for(int i = 0;i < COMMUTATION_STATES; i++)
     {
         if(startSeqeunce[i] == state)
             return i;
     }
+
+#endif
+return 1;
 }
 
 
 
 void BLDC::CalculatePWM()
 {
+#if 0
     previousError = error;
     error = targetVelocity - velocity;
     directionWindow = millis() + SAMPLE_WINDOW_MS;
@@ -319,17 +326,18 @@ void BLDC::CalculatePWM()
 
     if( controlPWM < MIN_PWM )
         controlPWM = MIN_PWM;
-
+#endif
 }
 
 void BLDC::ChangeDirection(bool _forward)
 {
+#if 0
     if(_forward == forward)
         return;
 
     startMotor(false);
     directionState = CHANGING;
     forward = _forward;
-
+#endif
 }
 

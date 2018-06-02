@@ -3,11 +3,10 @@
 
 #include "comms.h"
 
-Comms::Comms() : serial(USBTX, USBRX), messageReceived(false)
+
+Comms::Comms() : serial(USBTX, USBRX, BAUD), messageReceived(false)
 {
-    serial.baud(BAUD);
-    serial.attach(this,&Comms::messageReceive, MODSERIAL::RxAutoDetect);
-    serial.autoDetectChar('\n');
+    serial.attach(callback(this, &Comms::messageReceive));
 }
 
 
@@ -16,13 +15,16 @@ void Comms::ProcessMessages()
     Parse();
 }
 
-void Comms::messageReceive(MODSERIAL_IRQ_INFO *q)
+void Comms::messageReceive()
 {
-    MODSERIAL *sys = q->serial;
-    serialBuffer.resize(BUFFER_SIZE);
-    sys->move(serialBuffer.data(), BUFFER_SIZE);
-    messageReceived = true;
-    return 0;
+    while(serial.readable())
+    {
+        auto c = static_cast<char>(serial.getc());
+        if(c == END)
+            messageReceived = true;
+
+        //serialBuffer.push_back(c);
+    }
 }
 
 
@@ -37,44 +39,47 @@ void Comms::Parse()
 
         //Serial.print(serialBuffer);
 
-        unsigned char command = serialBuffer[1];//move to comamand character
+        char command = serialBuffer[0];//move to comamand character
+        serialBuffer.erase(begin(serialBuffer));
         switch(command)
         {
             case VELOCITY:
-                parseVelocity(index);
+                parseVelocity();
                 break;
             case PWM:
                 parsePWM();
                 break;
             case GAINS:
-                parseGains(index);
+                parseGains();
                 break;
             case CURRENT:
                 parseCurrent();
                 break;
             case START:
-                parseStart(index);
+                parseStart();
                 break;
             case DIRECTION:
-                parseDirection(index);
+                parseDirection();
                 break;
             default:
                 break;
         }
+        serialBuffer.clear();
+        messageReceived = false;
     }
 }
 
 bool Comms::findStart()
 {
     int counter = 0;
-    for(for auto& single:serialBuffer)
+    for(auto& single:serialBuffer)
     {
+        counter++;
         if(single == BEGINNING)
         {
             serialBuffer.erase(begin(serialBuffer), begin(serialBuffer) + counter);
             return  true;
         }
-        counter++;
     }
 
     return false;
@@ -85,100 +90,110 @@ void Comms::Send(int data)
     serial.printf("B%04d\n",data);
 }
 
-void Comms::parseVelocity(int index)
+void Comms::ReadorWrite(auto read, auto write)
 {
-    index++;  // moved to read/write character
-    if(serialBuffer[index] == READ)
+    char Read = serialBuffer[0];
+    serialBuffer.erase(begin(serialBuffer));
+
+    if(Read == WRITE)
     {
-        Send((int)(velocity * MULTIPLIER));
+        write();
     }
-    else if(serialBuffer[index] == WRITE)
+    read();
+}
+
+void Comms::parseVelocity()
+{
+    auto read = [&](){Send((int)(data.velocity * MULTIPLIER));};
+    auto write = [&]()
     {
         char velocity[2];
-        index++;
-        velocity[0] = serialBuffer[index];
-        index++;
-        velocity[1] = serialBuffer[index];
-        targetVelocity = atof(velocity)/DIVISOR;
 
-        if(targetVelocity > MAX_VELOCITY/(double)DIVISOR)
+        velocity[0] = serialBuffer[0];
+        velocity[1] = serialBuffer[1];
+        data.targetVelocity = atof(velocity)/DIVISOR;
+
+        if(data.targetVelocity > MAX_VELOCITY/(double)DIVISOR)
         {
-            targetVelocity = MAX_VELOCITY/(double)DIVISOR;
+            data.targetVelocity = MAX_VELOCITY/(double)DIVISOR;
         }
 
-        if(targetVelocity < MIN_VELOCITY/(double)DIVISOR)
+        if(data.targetVelocity < MIN_VELOCITY/(double)DIVISOR)
         {
-            targetVelocity = MIN_VELOCITY/(double)DIVISOR;
+            data.targetVelocity = MIN_VELOCITY/(double)DIVISOR;
         }
+    };
 
+    ReadorWrite(read, write);
 
-
-        Send((int)(targetVelocity * DIVISOR));
-    }
 }
 
 void Comms::parsePWM()
 {
-    Send(controlPWM);
+    Send(data.controlPWM);
 }
 
-void Comms::parseGains(int index)
+void Comms::parseGains()
 {
-    index++;  // moved to read/write character
-    if(serialBuffer[index] == READ)
+    auto read = [&]()
     {
-        Send((int)(P_gain * MULTIPLIER));
-        Send((int)(I_gain * MULTIPLIER));
-    }
-    else if(serialBuffer[index] == WRITE)
+        Send((int)(data.P_gain * MULTIPLIER));
+        Send((int)(data.I_gain * MULTIPLIER));
+    };
+    auto write = [&]()
     {
-        index++;
-        char p_string[4];
-        char i_string[4];
 
-        strncpy(p_string,(const char *)&serialBuffer[index], GAIN_SIZE);
-        index += GAIN_SIZE;
-        strncpy(i_string,(const char *)&serialBuffer[index], GAIN_SIZE);
-        P_gain = atof(p_string)/MULTIPLIER;
-        I_gain = atof(i_string)/MULTIPLIER;
+        string p_string(begin(serialBuffer),begin(serialBuffer)+GAIN_SIZE);
+        string i_string(begin(serialBuffer)+GAIN_SIZE,begin(serialBuffer)+(2*GAIN_SIZE));
 
-        Send((int)(P_gain * MULTIPLIER));
-        Send((int)(I_gain * MULTIPLIER));
-    }
+        data.P_gain = atof(p_string.c_str())/MULTIPLIER;
+        data.I_gain = atof(i_string.c_str())/MULTIPLIER;
+    };
+
+    ReadorWrite(read, write);
 }
 
 void Comms::parseCurrent()
 {
-    Send((int)(current * MULTIPLIER));
+    Send((int)(data.current * MULTIPLIER));
 }
 
-void Comms::parseStart(int index)
+void Comms::parseStart()
 {
-    index++;  // moved to read/write character
-    if(serialBuffer[index] == READ)
+    auto read = [&]()
     {
-        Send((int)started);
-    }
-    else if(serialBuffer[index] == WRITE)
+        Send((int)data.started);
+    };
+    auto write = [&]()
     {
-        index++; // moved to started value
-        startMotor((serialBuffer[index] == '1'));
-        Send((int)started);
-    }
+        //startMotor((serialBuffer[index] == '1'));
+    };
+
+    ReadorWrite(read, write);
 }
 
-void Comms::parseDirection(int index)
+void Comms::parseDirection()
 {
-    index++;  // moved to read/write character
-    if(serialBuffer[index] == READ)
+    auto read = [&]()
     {
-        Send((int)forward);
-    }
-    else if(serialBuffer[index] == WRITE)
+        Send((int)data.forward);
+    };
+    auto write = [&]()
     {
-        index++; // moved to started value
-        ChangeDirection((serialBuffer[index]== '1'));
-        Send((int)forward);
-    }
+        //ChangeDirection((serialBuffer[index]== '1');
+        int i = 1;
+    };
+
+    ReadorWrite(read, write);
+}
+
+const DataTransport &Comms::getData() const
+{
+    return data;
+}
+
+void Comms::setData(const DataTransport &data)
+{
+    Comms::data = data;
 }
 

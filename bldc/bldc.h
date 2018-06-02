@@ -4,7 +4,10 @@
 #ifndef __BLDC_H__
 #define __BLDC_H__
 
-#include <stdint.h>
+#include <mbed.h>
+#include "comms.h"
+
+
 
 enum commumationStates
 {
@@ -46,7 +49,6 @@ enum HALL_PINS
 };
 
 
-
 class BLDC
 {
 public:
@@ -65,11 +67,10 @@ public:
     int* getRawHallData();
 	void FullCycleTest();
 	void InputTest();
-    void Reverse(){forward = false;}
-    void Forward(){forward = true;}
+    void Reverse(){data.forward = false;}
+    void Forward(){data.forward = true;}
     void ReadHalls();
 
-    void ProcessMessages();
 
     enum constants
     {
@@ -85,29 +86,22 @@ public:
 		SAMPLE_WINDOW_MS = 100
     };
 
-
 private:
-	bool forward;
-    bool started;
 
     volatile int RawHallData[NUMBER_HALLS];
     commumationStates currentCommunationState;
     commumationStates newCommunationState;
     int cycleCounter;
 
-    double velocity;
+	DataTransport data;
+    Comms communication;
     long previousTime;
     long currentTime;
     long directionWindow;
 
 
-	double P_gain;
-	double I_gain;
-	double targetVelocity;
 	double error;
 	double previousError;
-	unsigned char controlPWM;
-	double current;
 
 
     void startMotor(bool start);
@@ -120,10 +114,6 @@ private:
 
 	enum velocityConstants
 	{
-		DIVISOR = 10,
-		MAX_VELOCITY = 50,     	// divide by 10 m/sec
-		MIN_VELOCITY = 5,		// divide by 10 m/sec
-		MULTIPLIER = 100,
 		MAX_PWM = 85,
 		MIN_PWM = 15,
         MAX_PWM_STEP = 4

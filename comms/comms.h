@@ -5,30 +5,46 @@
 #define __COMMS_H__
 
 #include <vector>
-#include "MODSERIAL.h"
+#include <array>
+#include <functional>
+#include "DataTransport.h"
+#include "mbed.h"
+
+using std::vector;
+using std::function;
+using std::array;
 
 class Comms {
 public:
     Comms();
 
-    virtual ~Comms();
+    virtual ~Comms() = default;
     void ProcessMessages();
+    const DataTransport &getData() const;
+    void setData(const DataTransport &data);
     
 private:
-    std::vector<char> serialBuffer;
-    MODSERIAL         serial;
+    vector<char> serialBuffer;
+    RawSerial         serial;
     bool messageReceived;
+    DataTransport data;
 
     void Parse();
     bool findStart();
-    void parseVelocity(int index);
+    void parseVelocity();
     void parsePWM();
-    void parseGains(int index);
+    void parseGains();
     void parseCurrent();
-    void parseStart(int index);
-    void parseDirection(int index);
-    void messageReceive(MODSERIAL_IRQ_INFO *q);
+    void parseStart();
+    void parseDirection();
+    void messageReceive();
     void Send(int data);
+
+
+    void ReadorWrite(auto read, auto write);
+
+
+    //BV35
 
     enum serialConstants
     {
@@ -45,10 +61,13 @@ private:
         MIN_SIZE  = 3,
         BUFFER_SIZE = 16,
         GAIN_SIZE = 4,
-        BAUD  = 115200
-
+        BAUD  = 115200,
+        DIVISOR = 10,
+        MAX_VELOCITY = 50,     	// divide by 10 m/sec
+        MIN_VELOCITY = 5,		// divide by 10 m/sec
+        MULTIPLIER = 100,
 
     };
     
-}
-    
+};
+#endif

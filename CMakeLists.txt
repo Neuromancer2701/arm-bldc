@@ -86,8 +86,6 @@ mbed-os/cmsis/TARGET_CORTEX_M/core_sc300.h
 mbed-os/cmsis/TARGET_CORTEX_M/mpu_armv7.h
 mbed-os/cmsis/TARGET_CORTEX_M/mpu_armv8.h
 mbed-os/cmsis/TARGET_CORTEX_M/tz_context.h
-MODSERIAL/MODSERIAL.cpp
-MODSERIAL/MODSERIAL.h
 mbed-os/drivers/AnalogIn.cpp
 mbed-os/drivers/AnalogIn.h
 mbed-os/drivers/AnalogOut.h
@@ -642,7 +640,7 @@ mbed-os/targets/TARGET_STM/us_ticker_32b.c
 mbed-os/tools/data/rpc/class.cpp
 mbed-os/tools/data/rpc/RPCClasses.h
 mbed-os/mbed.h
-main.cpp)
+main.cpp bldc/DataTransport.h)
 
 
 add_executable(arm-bldc ${SOURCE_FILES})
