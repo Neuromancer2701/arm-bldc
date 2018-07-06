@@ -24,10 +24,6 @@ public:
     void setData(const DataTransport &data);
     
 private:
-    vector<char> serialBuffer;
-    RawSerial         serial;
-    bool messageReceived;
-    DataTransport data;
 
     void Parse();
     bool findStart();
@@ -42,9 +38,6 @@ private:
 
 
     void ReadorWrite(auto read, auto write);
-
-
-    //BV35
 
     enum serialConstants
     {
@@ -68,6 +61,15 @@ private:
         MULTIPLIER = 100,
 
     };
+    //BV35
+
+    vector<char> serialBuffer;
+    array<char, BUFFER_SIZE>  staticBuffer;
+    unsigned char counter;
+    RawSerial         serial;
+    bool messageReceived;
+    DataTransport data;
+
     
 };
 #endif

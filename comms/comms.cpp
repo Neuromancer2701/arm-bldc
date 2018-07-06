@@ -2,11 +2,17 @@
 //Seth M King
 
 #include "comms.h"
+#include <algorithm>
 
+using std::fill;
+using std::begin;
+using std::end;
 
 Comms::Comms() : serial(USBTX, USBRX, BAUD), messageReceived(false)
 {
     serial.attach(callback(this, &Comms::messageReceive));
+    fill(begin(staticBuffer), end(staticBuffer), 0);
+    counter = 0;
 }
 
 
@@ -20,9 +26,12 @@ void Comms::messageReceive()
     while(serial.readable())
     {
         auto c = static_cast<char>(serial.getc());
+        staticBuffer[counter++] = c;
         if(c == END)
+        {
             messageReceived = true;
-
+            counter = 0;
+        }
         //serialBuffer.push_back(c);
     }
 }
@@ -71,14 +80,18 @@ void Comms::Parse()
 
 bool Comms::findStart()
 {
-    int counter = 0;
-    for(auto& single:serialBuffer)
+    bool found = false;
+    for(auto& single:staticBuffer)
     {
-        counter++;
-        if(single == BEGINNING)
+        if(single == BEGINNING || found)
         {
-            serialBuffer.erase(begin(serialBuffer), begin(serialBuffer) + counter);
-            return  true;
+            serialBuffer.push_back(single);
+            found = true;
+        }
+
+        if(single == END && found)
+        {
+            return true;
         }
     }
 
