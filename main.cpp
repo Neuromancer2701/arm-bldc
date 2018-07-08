@@ -6,7 +6,8 @@
 int main()
 {
     BLDC motor;
-    printf("\n\n*** motor serial test ***\n");
+
+    motor.initPWM();
 
     while(1)
     {

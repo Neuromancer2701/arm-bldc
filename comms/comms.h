@@ -22,6 +22,8 @@ public:
     void ProcessMessages();
     const DataTransport &getData() const;
     void setData(const DataTransport &data);
+
+    void startup() {serial.puts("Starting up Comms\n");}
     
 private:
 
@@ -50,7 +52,7 @@ private:
         DIRECTION = 'D',
         READ      = 'R',
         WRITE     = 'W',
-        END       = '\n',
+        END       = 'Q',
         MIN_SIZE  = 3,
         BUFFER_SIZE = 16,
         GAIN_SIZE = 4,
@@ -61,7 +63,7 @@ private:
         MULTIPLIER = 100,
 
     };
-    //BV35
+    //BVW35Q
 
     vector<char> serialBuffer;
     array<char, BUFFER_SIZE>  staticBuffer;

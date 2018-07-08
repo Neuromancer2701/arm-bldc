@@ -45,6 +45,7 @@ BLDC::~BLDC()
 
 void BLDC::initPWM()
 {
+    communication.startup();
     // begin with 500 pwm frequency
    // Palatis::SoftPWM.begin(500);
 

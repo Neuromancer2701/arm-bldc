@@ -4,8 +4,7 @@
   ],
   "target_overrides": {
     "*": {
-      "platform.stdio-flush-at-exit": false,
-      "target.features_remove": ["BLE","lora"]
+      "platform.stdio-flush-at-exit": false
     }
   }
 }

@@ -7,6 +7,7 @@
 using std::fill;
 using std::begin;
 using std::end;
+using std::for_each;
 
 Comms::Comms() : serial(USBTX, USBRX, BAUD), messageReceived(false)
 {
@@ -30,7 +31,7 @@ void Comms::messageReceive()
         if(c == END)
         {
             messageReceived = true;
-            counter = 0;
+            //counter = 0;
         }
         //serialBuffer.push_back(c);
     }
@@ -40,10 +41,8 @@ void Comms::messageReceive()
 void Comms::Parse()
 {
 
-    if(messageReceived && findStart())
+    if(findStart())
     {
-
-        //Serial.print("readBytes: ");
         //Serial.println(readBytes);
 
         //Serial.print(serialBuffer);
@@ -80,6 +79,12 @@ void Comms::Parse()
 
 bool Comms::findStart()
 {
+    if(!messageReceived)
+        return  false;
+
+    //printf("Got message:%d\n", counter);
+    //for_each(begin(staticBuffer), end(staticBuffer),[&](auto c){serial.putc(c);});
+
     bool found = false;
     for(auto& single:staticBuffer)
     {
@@ -91,6 +96,9 @@ bool Comms::findStart()
 
         if(single == END && found)
         {
+            serialBuffer.erase(begin(serialBuffer)); // remove B
+            fill(begin(staticBuffer), end(staticBuffer), 0);
+            counter = 0;
             return true;
         }
     }
@@ -105,8 +113,13 @@ void Comms::Send(int data)
 
 void Comms::ReadorWrite(auto read, auto write)
 {
+
     char Read = serialBuffer[0];
     serialBuffer.erase(begin(serialBuffer));
+
+
+    for_each(begin(serialBuffer), end(serialBuffer),[&](auto c){serial.putc(c);});
+    printf("\n %c \n", Read);
 
     if(Read == WRITE)
     {
@@ -117,9 +130,10 @@ void Comms::ReadorWrite(auto read, auto write)
 
 void Comms::parseVelocity()
 {
-    auto read = [&](){Send((int)(data.velocity * MULTIPLIER));};
+    auto read = [&](){Send((int)(data.targetVelocity * MULTIPLIER));};
     auto write = [&]()
     {
+
         char velocity[2];
 
         velocity[0] = serialBuffer[0];
@@ -138,7 +152,6 @@ void Comms::parseVelocity()
     };
 
     ReadorWrite(read, write);
-
 }
 
 void Comms::parsePWM()

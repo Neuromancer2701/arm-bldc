@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(arm_bldc)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-add_definitions(-DTARGET_NUCLEO_F302)
+add_definitions(-DTARGET_NUCLEO_F303FE)
 add_definitions(-DDEVICE_SERIAL)
 add_definitions(-DDEVICE_SERIAL_ASYNCH)
 add_definitions(-DDEVICE_SERIAL_FC)
@@ -168,7 +168,6 @@ mbed-os/hal/can_api.h
 mbed-os/hal/can_helper.h
 mbed-os/hal/critical_section_api.h
 mbed-os/hal/dma_api.h
-mbed-os/hal/emac_api.h
 mbed-os/hal/ethernet_api.h
 mbed-os/hal/flash_api.h
 mbed-os/hal/gpio_api.h
@@ -635,8 +634,6 @@ mbed-os/targets/TARGET_STM/sleep.c
 mbed-os/targets/TARGET_STM/stm32_assert.h
 mbed-os/targets/TARGET_STM/stm_spi_api.c
 mbed-os/targets/TARGET_STM/trng_api.c
-mbed-os/targets/TARGET_STM/us_ticker_16b.c
-mbed-os/targets/TARGET_STM/us_ticker_32b.c
 mbed-os/tools/data/rpc/class.cpp
 mbed-os/tools/data/rpc/RPCClasses.h
 mbed-os/mbed.h
