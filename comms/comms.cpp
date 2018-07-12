@@ -3,17 +3,23 @@
 
 #include "comms.h"
 #include <algorithm>
+#include <cstdlib>
 
 using std::fill;
 using std::begin;
 using std::end;
 using std::for_each;
+using std::clamp;
+using std::stod;
 
 Comms::Comms() : serial(USBTX, USBRX, BAUD), messageReceived(false)
 {
     serial.attach(callback(this, &Comms::messageReceive));
     fill(begin(staticBuffer), end(staticBuffer), 0);
     counter = 0;
+    div = static_cast<double>(DIVISOR);
+    MAX_V = MAX_VELOCITY/div;
+    MIN_V = MIN_VELOCITY/div;
 }
 
 
@@ -51,6 +57,9 @@ void Comms::Parse()
         serialBuffer.erase(begin(serialBuffer));
         switch(command)
         {
+            case VELOCITY_TARGET:
+                parseTargetVelocity();
+                break;
             case VELOCITY:
                 parseVelocity();
                 break;
@@ -108,7 +117,7 @@ bool Comms::findStart()
 
 void Comms::Send(int data)
 {
-    serial.printf("B%04d\n",data);
+    serial.printf("B%04dQ\n",data);
 }
 
 void Comms::ReadorWrite(auto read, auto write)
@@ -117,10 +126,6 @@ void Comms::ReadorWrite(auto read, auto write)
     char Read = serialBuffer[0];
     serialBuffer.erase(begin(serialBuffer));
 
-
-    for_each(begin(serialBuffer), end(serialBuffer),[&](auto c){serial.putc(c);});
-    printf("\n %c \n", Read);
-
     if(Read == WRITE)
     {
         write();
@@ -128,30 +133,24 @@ void Comms::ReadorWrite(auto read, auto write)
     read();
 }
 
-void Comms::parseVelocity()
+void Comms::parseTargetVelocity()
 {
     auto read = [&](){Send((int)(data.targetVelocity * MULTIPLIER));};
     auto write = [&]()
     {
-
         char velocity[2];
 
         velocity[0] = serialBuffer[0];
         velocity[1] = serialBuffer[1];
-        data.targetVelocity = atof(velocity)/DIVISOR;
-
-        if(data.targetVelocity > MAX_VELOCITY/(double)DIVISOR)
-        {
-            data.targetVelocity = MAX_VELOCITY/(double)DIVISOR;
-        }
-
-        if(data.targetVelocity < MIN_VELOCITY/(double)DIVISOR)
-        {
-            data.targetVelocity = MIN_VELOCITY/(double)DIVISOR;
-        }
+        data.targetVelocity = clamp(atof(velocity)/div, MIN_V, MAX_V);
     };
 
     ReadorWrite(read, write);
+}
+
+void Comms::parseVelocity()
+{
+    Send((int)(data.velocity * MULTIPLIER));
 }
 
 void Comms::parsePWM()
@@ -172,8 +171,11 @@ void Comms::parseGains()
         string p_string(begin(serialBuffer),begin(serialBuffer)+GAIN_SIZE);
         string i_string(begin(serialBuffer)+GAIN_SIZE,begin(serialBuffer)+(2*GAIN_SIZE));
 
-        data.P_gain = atof(p_string.c_str())/MULTIPLIER;
-        data.I_gain = atof(i_string.c_str())/MULTIPLIER;
+        data.P_gain = stod(p_string)/MULTIPLIER;
+        data.I_gain = stod(i_string)/MULTIPLIER;
+
+        data.P_gain = clamp(data.P_gain, 0.1, 10.0);
+        data.I_gain = clamp(data.I_gain, 0.1, 10.0);
     };
 
     ReadorWrite(read, write);
@@ -192,7 +194,7 @@ void Comms::parseStart()
     };
     auto write = [&]()
     {
-        //startMotor((serialBuffer[index] == '1'));
+        data.started = (serialBuffer[0] == '1');
     };
 
     ReadorWrite(read, write);
@@ -206,8 +208,7 @@ void Comms::parseDirection()
     };
     auto write = [&]()
     {
-        //ChangeDirection((serialBuffer[index]== '1');
-        int i = 1;
+       data.forward = (serialBuffer[0] == '1');
     };
 
     ReadorWrite(read, write);

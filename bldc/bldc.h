@@ -4,6 +4,9 @@
 #ifndef __BLDC_H__
 #define __BLDC_H__
 
+#pragma GCC diagnostic ignored "-Wregister"
+
+
 #include <mbed.h>
 #include "comms.h"
 

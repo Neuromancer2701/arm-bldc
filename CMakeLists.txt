@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(arm_bldc)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 add_definitions(-DTARGET_NUCLEO_F303FE)
 add_definitions(-DDEVICE_SERIAL)
 add_definitions(-DDEVICE_SERIAL_ASYNCH)
@@ -637,7 +637,7 @@ mbed-os/targets/TARGET_STM/trng_api.c
 mbed-os/tools/data/rpc/class.cpp
 mbed-os/tools/data/rpc/RPCClasses.h
 mbed-os/mbed.h
-main.cpp bldc/DataTransport.h)
+main.cpp bldc/DataTransport.h debug.h)
 
 
 add_executable(arm-bldc ${SOURCE_FILES})

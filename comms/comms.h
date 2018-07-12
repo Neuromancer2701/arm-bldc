@@ -22,13 +22,13 @@ public:
     void ProcessMessages();
     const DataTransport &getData() const;
     void setData(const DataTransport &data);
-
     void startup() {serial.puts("Starting up Comms\n");}
     
 private:
 
     void Parse();
     bool findStart();
+    void parseTargetVelocity();
     void parseVelocity();
     void parsePWM();
     void parseGains();
@@ -43,35 +43,39 @@ private:
 
     enum serialConstants
     {
-        BEGINNING = 'B',
-        VELOCITY  = 'V',
-        PWM       = 'P',
-        GAINS     = 'G',
-        CURRENT   = 'C',
-        START     = 'S',
-        DIRECTION = 'D',
-        READ      = 'R',
-        WRITE     = 'W',
-        END       = 'Q',
-        MIN_SIZE  = 3,
-        BUFFER_SIZE = 16,
-        GAIN_SIZE = 4,
-        BAUD  = 115200,
-        DIVISOR = 10,
-        MAX_VELOCITY = 50,     	// divide by 10 m/sec
-        MIN_VELOCITY = 5,		// divide by 10 m/sec
-        MULTIPLIER = 100,
+        BEGINNING        = 'B',
+        VELOCITY_TARGET  = 'T',             //BTW99Q BTW35Q BTW00Q BTRQ
+        VELOCITY         = 'V',             //BVQ
+        PWM              = 'P',             //BPQ
+        GAINS            = 'G',             //BGW77007700Q BGW01000100Q BGW00000000Q BGRQ
+        CURRENT          = 'C',             //BCQ
+        START            = 'S',             //BSW1Q BSW0Q BSRQ
+        DIRECTION        = 'D',             //BDW1Q BDW0Q BDRQ
+        READ             = 'R',
+        WRITE            = 'W',
+        END              = 'Q',
+        MIN_SIZE         = 3,
+        BUFFER_SIZE      = 16,
+        GAIN_SIZE        = 4,
+        BAUD             = 115200,
+        DIVISOR          = 10,
+        MAX_VELOCITY     = 50,     	// divide by 10 m/sec
+        MIN_VELOCITY     = 5,		// divide by 10 m/sec
+        MULTIPLIER       = 100,
 
     };
-    //BVW35Q
 
-    vector<char> serialBuffer;
-    array<char, BUFFER_SIZE>  staticBuffer;
-    unsigned char counter;
-    RawSerial         serial;
-    bool messageReceived;
-    DataTransport data;
 
-    
+    vector<char>                serialBuffer;
+    array<char, BUFFER_SIZE>    staticBuffer;
+    unsigned char               counter;
+    RawSerial                   serial;
+    bool                        messageReceived;
+    DataTransport               data;
+
+    double div;
+    double MAX_V;
+    double MIN_V;
+
 };
 #endif
