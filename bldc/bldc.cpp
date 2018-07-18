@@ -1,12 +1,16 @@
 
+
 #include "bldc.h"
 #include "utils.h"
+#include <algorithm>
+
 
 using std::make_unique;
 
 commumationStates startSeqeunce[BLDC::COMMUTATION_STATES] = {State1, State2, State3, State4, State5, State6};
 
-BLDC::BLDC():LowSide(D7, D6, D5), HallIO(D3, D4, D5)
+BLDC::BLDC():LowSide(static_cast<PinName>(C_LOW), static_cast<PinName>(B_LOW), static_cast<PinName>(C_LOW)),
+             HallIO(static_cast<PinName>(HALL3), static_cast<PinName>(HALL2), static_cast<PinName>(HALL3))
 {
     cycleCounter = 0;
 
@@ -24,6 +28,9 @@ BLDC::BLDC():LowSide(D7, D6, D5), HallIO(D3, D4, D5)
     {
         HighSide[index] = make_unique<PwmOut>(HighSide_pins[index]);
     }
+
+    transform( begin(HallStates), end(HallStates), begin(FetStates), inserter(commutationMap, end(commutationMap)),
+               make_pair<int const&,int const&> );
 }
 
 BLDC::~BLDC()
@@ -45,10 +52,7 @@ void BLDC::initPWM()
 
 void BLDC::ReadHalls()
 {
-    //RawHallData[HALL1_INDEX] = digitalRead(HALL1);
-    //RawHallData[HALL2_INDEX] = digitalRead(HALL2);
-    //RawHallData[HALL3_INDEX] = digitalRead(HALL3);
-    newCommunationState = (commumationStates)((RawHallData[HALL1_INDEX] << HALL1_SHIFT) | (RawHallData[HALL2_INDEX] << HALL2_SHIFT) | RawHallData[HALL3_INDEX]);
+    newCommunationState = static_cast<commumationStates>(HallIO.read());
 }
 
 
@@ -156,9 +160,8 @@ void BLDC::CalculateCommutationState()
 
 void BLDC::SetStateIO()
 {
-#if 0
-    PORTB = 0x00; //clear io to give a bit of rest time between states. To prevent shoot through.
-    Palatis::SoftPWM.allOff();
+
+    LowSide.write(0x00);
 
     int highSideIndex = 0;
     unsigned short lowSide = 0;
@@ -253,7 +256,7 @@ void BLDC::SetStateIO()
 
     Palatis::SoftPWM.set(highSideIndex, controlPWM);
     PORTB = lowSide;
-#endif
+
 }
 
 int *BLDC::getRawHallData()

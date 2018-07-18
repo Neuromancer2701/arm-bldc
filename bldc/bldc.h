@@ -9,9 +9,11 @@
 
 #include <mbed.h>
 #include <memory>
+#include <map>
 #include "comms.h"
 
-using unique_ptr;
+using std::unique_ptr;
+using std::map;
 
 
 enum commumationStates
@@ -26,18 +28,22 @@ enum commumationStates
 
 enum FET_PINS
 {
-    A_HIGH = D11,	 //! Port pin connected to phase A, high side enable switch. Arduino Pin 11
-    A_LOW = D7, //! Port pin connected to phase A, low side enable switch.  Arduino Pin 7
+    A_HIGH = D11,    //! Port pin connected to phase A, high side enable switch. Arduino Pin 11
+    A_LOW = D7,      //! Port pin connected to phase A, low side enable switch.  Arduino Pin 7
 
     B_HIGH = D10,	 //! Port pin connected to phase B, high side enable switch. Arduino Pin 10
-    B_LOW = D6,	 //! Port pin connected to phase B, low side enable switch. Arduino Pin 6
+    B_LOW = D6,	     //! Port pin connected to phase B, low side enable switch. Arduino Pin 6
 
     C_HIGH = D9,	 //! Port pin connected to phase C, high side enable switch. Arduino Pin 9
-    C_LOW = D5, //! Port pin connected to phase C, low side enable switch.	Arduino Pin 5
+    C_LOW = D5,      //! Port pin connected to phase C, low side enable switch.	Arduino Pin 5
 
-    AH_INDEX = 0x00,
-    BH_INDEX = 0x01,
-    CH_INDEX = 0x02
+    A_ON  = 0x04,  //100
+    B_ON  = 0x02,  //010
+    C_ON  = 0x01,  //001
+    PWM_A = 0,
+    PWM_B = 1,
+    PWM_C = 2
+
 };
 
 enum HALL_PINS
@@ -115,11 +121,17 @@ private:
     BusOut LowSide;
     BusIn  HallIO;
 
+    array<int, COMMUTATION_STATES> HallStates = {State1, State2, State3, State4, State5, State6};
+    array<int, COMMUTATION_STATES> LowSideStates = {A_LOW, B_LOW, C_LOW};
+    array<int, COMMUTATION_STATES> HighSideStates = {A_HIGH, B_HIGH, C_HIGH};
+    map<int, pair<int, int> >  commutationMap;
+
     void startMotor(bool start);
 	void ChangeDirection(bool forward);
     int  findIndex(commumationStates state);
 	void CalculatePWM();
     void SetStateIO();
+    void SetPWMState();
 
 
 
