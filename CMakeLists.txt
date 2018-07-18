@@ -6,10 +6,12 @@ add_definitions(-DTARGET_NUCLEO_F303FE)
 add_definitions(-DDEVICE_SERIAL)
 add_definitions(-DDEVICE_SERIAL_ASYNCH)
 add_definitions(-DDEVICE_SERIAL_FC)
+add_definitions(-DDEVICE_PWMOUT)
+add_definitions(-DDEVICE_PORTIN)
 
 include_directories(bldc)
-include_directories(MODSERIAL)
 include_directories(comms)
+include_directories(utils)
 include_directories(mbed-os)
 include_directories(mbed-os/cmsis/TARGET_CORTEX_A)
 include_directories(mbed-os/cmsis/TARGET_CORTEX_M)
@@ -53,8 +55,13 @@ include_directories(mbed-os/tools/data/rpc)
 set(SOURCE_FILES
 bldc/bldc.cpp
 bldc/bldc.h
+bldc/DataTransport.h
 comms/comms.cpp
 comms/comms.h
+debug.h
+utils/utils.cpp
+utils/utils.h
+main.cpp
 mbed-os/cmsis/TARGET_CORTEX_A/cmsis_armcc.h
 mbed-os/cmsis/TARGET_CORTEX_A/cmsis_armclang.h
 mbed-os/cmsis/TARGET_CORTEX_A/cmsis_compiler.h
@@ -636,8 +643,7 @@ mbed-os/targets/TARGET_STM/stm_spi_api.c
 mbed-os/targets/TARGET_STM/trng_api.c
 mbed-os/tools/data/rpc/class.cpp
 mbed-os/tools/data/rpc/RPCClasses.h
-mbed-os/mbed.h
-main.cpp bldc/DataTransport.h debug.h)
+mbed-os/mbed.h)
 
 
 add_executable(arm-bldc ${SOURCE_FILES})

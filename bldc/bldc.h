@@ -8,8 +8,10 @@
 
 
 #include <mbed.h>
+#include <memory>
 #include "comms.h"
 
+using unique_ptr;
 
 
 enum commumationStates
@@ -24,14 +26,14 @@ enum commumationStates
 
 enum FET_PINS
 {
-    AH = 4,	 //! Port pin connected to phase A, high side enable switch. Arduino Pin 4
-    AL = 12, //! Port pin connected to phase A, low side enable switch.  Arduino Pin 12
+    A_HIGH = D11,	 //! Port pin connected to phase A, high side enable switch. Arduino Pin 11
+    A_LOW = D7, //! Port pin connected to phase A, low side enable switch.  Arduino Pin 7
 
-    BH = 9,	 //! Port pin connected to phase B, high side enable switch. Arduino Pin 9
-    BL = 8,	 //! Port pin connected to phase B, low side enable switch. Arduino Pin 8
+    B_HIGH = D10,	 //! Port pin connected to phase B, high side enable switch. Arduino Pin 10
+    B_LOW = D6,	 //! Port pin connected to phase B, low side enable switch. Arduino Pin 6
 
-    CH = 5,	 //! Port pin connected to phase C, high side enable switch. Arduino Pin 5
-    CL = 13, //! Port pin connected to phase C, low side enable switch.	Arduino Pin 13
+    C_HIGH = D9,	 //! Port pin connected to phase C, high side enable switch. Arduino Pin 9
+    C_LOW = D5, //! Port pin connected to phase C, low side enable switch.	Arduino Pin 5
 
     AH_INDEX = 0x00,
     BH_INDEX = 0x01,
@@ -40,14 +42,15 @@ enum FET_PINS
 
 enum HALL_PINS
 {
-    HALL1 = 3,	 //! Port pin connected to phase A, high side enable switch. Arduino Pin 2
+    HALL1 = D4,	 //! Port pin connected to phase A, high side enable switch. Arduino Pin 4
     HALL1_SHIFT = 2,
     HALL1_INDEX = 0,
 
-    HALL2 = 6, //! Port pin connected to phase A, low side enable switch.  Arduino Pin 1
+    HALL2 = D3, //! Port pin connected to phase B, low side enable switch.  Arduino Pin 3
     HALL2_SHIFT = 1,
     HALL2_INDEX = 1,
-    HALL3 = 7,	 //! Port pin connected to phase B, high side enable switch. Arduino Pin 0
+
+    HALL3 = D2,	 //! Port pin connected to phase C, high side enable switch. Arduino Pin 2
     HALL3_INDEX = 2,
 };
 
@@ -86,7 +89,8 @@ public:
         CL_HIGH_PORTB = 0x20,
         CYCLES_PER_REV = 60,
         RADIUS = 165,
-		SAMPLE_WINDOW_MS = 100
+		SAMPLE_WINDOW_MS = 100,
+		FET_IO = 3   // high side and low side each have 3
     };
 
 private:
@@ -102,10 +106,14 @@ private:
     long currentTime;
     long directionWindow;
 
-
 	double error;
 	double previousError;
 
+	array<unique_ptr<PwmOut>, FET_IO> HighSide;
+    array<int, FET_IO> HighSide_pins = {A_HIGH, B_HIGH, C_HIGH};
+
+    BusOut LowSide;
+    BusIn  HallIO;
 
     void startMotor(bool start);
 	void ChangeDirection(bool forward);

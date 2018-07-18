@@ -1,17 +1,12 @@
 
 #include "bldc.h"
+#include "utils.h"
 
-#if 0
-SOFTPWM_DEFINE_CHANNEL(AH_INDEX, DDRD, PORTD, PORTD4);  //Arduino pin 4
-SOFTPWM_DEFINE_CHANNEL(BH_INDEX, DDRB, PORTB, PORTB1);  //Arduino pin 9
-SOFTPWM_DEFINE_CHANNEL(CH_INDEX, DDRD, PORTD, PORTD5);  //Arduino pin 5
+using std::make_unique;
 
-SOFTPWM_DEFINE_OBJECT_WITH_PWM_LEVELS(3, 100);
-SOFTPWM_DEFINE_EXTERN_OBJECT_WITH_PWM_LEVELS(3, 100);
-#endif
 commumationStates startSeqeunce[BLDC::COMMUTATION_STATES] = {State1, State2, State3, State4, State5, State6};
 
-BLDC::BLDC()
+BLDC::BLDC():LowSide(D7, D6, D5), HallIO(D3, D4, D5)
 {
     cycleCounter = 0;
 
@@ -25,17 +20,10 @@ BLDC::BLDC()
     error = previousError = 0.0;
     communication.setData(data);
 
-    //pinMode(HALL1, INPUT);
-    //pinMode(HALL2, INPUT);
-    //pinMode(HALL3, INPUT);
-
-    //pinMode(AL, OUTPUT);
-    //pinMode(BL, OUTPUT);
-    //pinMode(CL, OUTPUT);
-    //digitalWrite(AL, 0);
-    //digitalWrite(BL, 0);
-    //digitalWrite(CL, 0);
-
+    for( auto& index:utils::range(FET_IO))
+    {
+        HighSide[index] = make_unique<PwmOut>(HighSide_pins[index]);
+    }
 }
 
 BLDC::~BLDC()
