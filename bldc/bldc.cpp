@@ -6,8 +6,9 @@
 
 
 using std::make_unique;
+using std::clamp;
 
-commumationStates startSeqeunce[BLDC::COMMUTATION_STATES] = {State1, State2, State3, State4, State5, State6};
+
 
 BLDC::BLDC():LowSide(static_cast<PinName>(C_LOW), static_cast<PinName>(B_LOW), static_cast<PinName>(C_LOW)),
              HallIO(static_cast<PinName>(HALL3), static_cast<PinName>(HALL2), static_cast<PinName>(HALL3))
@@ -29,8 +30,11 @@ BLDC::BLDC():LowSide(static_cast<PinName>(C_LOW), static_cast<PinName>(B_LOW), s
         HighSide[index] = make_unique<PwmOut>(HighSide_pins[index]);
     }
 
-    transform( begin(HallStates), end(HallStates), begin(FetStates), inserter(commutationMap, end(commutationMap)),
-               make_pair<int const&,int const&> );
+    for( auto& index:utils::range(COMMUTATION_STATES))
+    {
+        commutationMap.emplace(forwardSequence[index], make_pair(HighSideStates[index],LowSideStates[index]));
+        forward2Reverse.emplace(forwardSequence[index],reverseSequence[index]);
+    }
 }
 
 BLDC::~BLDC()
@@ -41,13 +45,13 @@ BLDC::~BLDC()
 void BLDC::initPWM()
 {
     communication.startup();
-    // begin with 500 pwm frequency
-   // Palatis::SoftPWM.begin(500);
 
-    // print interrupt load for diagnostic purposes
-    //Palatis::SoftPWM.printInterruptLoad();
+    for( auto& index:utils::range(FET_IO))
+    {
+        HighSide[index].get()->period_ms(PWM_PERIOD_MS);
+        HighSide[index].get()->write(0.0);
+    }
 
-    //Palatis::SoftPWM.allOff();
 }
 
 void BLDC::ReadHalls()
@@ -162,102 +166,17 @@ void BLDC::SetStateIO()
 {
 
     LowSide.write(0x00);
+    for_each(begin(HighSide),end(HighSide),[](auto pwm){pwm.get()->write(0.0);});  //Clear all PWMs
 
-    int highSideIndex = 0;
-    unsigned short lowSide = 0;
-    switch(currentCommunationState)
-		{
-
-			case State1:
-                 if(forward)
-                 {
-                     highSideIndex = AH_INDEX;
-                     lowSide = CL_HIGH_PORTB;
-                 }
-                 else
-                 {
-                     highSideIndex = CH_INDEX;
-                     lowSide = AL_HIGH_PORTB;
-                 }
-				 break;
-
-			case State2:
-                 if(forward)
-                 {
-                     highSideIndex = BH_INDEX;
-                     lowSide = CL_HIGH_PORTB;
-                 }
-                 else
-                 {
-                     highSideIndex = CH_INDEX;
-                     lowSide = BL_HIGH_PORTB;
-                 }
-                 break;
-
-			case State3:
-                 if(forward)
-                 {
-                     highSideIndex = BH_INDEX;
-                     lowSide = AL_HIGH_PORTB;
-                 }
-                 else
-                 {
-                     highSideIndex = AH_INDEX;
-                     lowSide = BL_HIGH_PORTB;
-                 }
-                 break;
-			case State4:
-                 if(forward)
-                 {
-                     highSideIndex = CH_INDEX;
-                     lowSide = AL_HIGH_PORTB;
-                 }
-                 else
-                 {
-                     highSideIndex = AH_INDEX;
-                     lowSide = CL_HIGH_PORTB;
-                 }
-                 break;
-			case State5:
-                 if(forward)
-                 {
-                     highSideIndex = CH_INDEX;
-                     lowSide = BL_HIGH_PORTB;;
-                 }
-                 else
-                 {
-                     highSideIndex = BH_INDEX;
-                     lowSide = CL_HIGH_PORTB;
-                 }
-                 break;
-			case State6:
-                if(forward)
-                {
-                    highSideIndex = AH_INDEX;
-                    lowSide = BL_HIGH_PORTB;
-                }
-                else
-                {
-                    highSideIndex = BH_INDEX;
-                    lowSide = AL_HIGH_PORTB;
-                }
-                break;
-
-            default:
-                PORTB = 0x00;
-                Palatis::SoftPWM.allOff();
-                break;
-
-		}
+    auto& [highindex, lowsetting] = commutationMap[currentCommunationState];
 
     //char data[256];
     //sprintf(data,"hideIndex: %d PORTB: %02x Forward: %s", highSideIndex, lowSide, forward ? "true" : "false");
     //Serial.println(data);
-
-    Palatis::SoftPWM.set(highSideIndex, controlPWM);
-    PORTB = lowSide;
-
+    HighSide[highindex].get()->write(data.controlPWM);
+    LowSide.write(lowsetting);
 }
+
 
 int *BLDC::getRawHallData()
 {
@@ -301,24 +220,17 @@ return 1;
 
 void BLDC::CalculatePWM()
 {
-#if 0
+
     previousError = error;
-    error = targetVelocity - velocity;
+    error = data.targetVelocity - data.velocity;
     directionWindow = millis() + SAMPLE_WINDOW_MS;
 
-    double controlPWMStep = (P_gain * error) + (I_gain * ((previousError + error)/2));
+    double controlPWMStep = (data.P_gain * error) + (data.I_gain * ((previousError + error)/2));
 
-    if(controlPWMStep > MAX_PWM_STEP)
-        controlPWMStep = MAX_PWM_STEP;
+    controlPWMStep = clamp(controlPWMStep, MAX_PWM_STEP/-1.0, MAX_PWM_STEP/1.0);
 
-    controlPWM += controlPWMStep;
+    data.controlPWM = clamp(data.controlPWM + static_cast<unsigned char>(controlPWMStep),MIN_PWM);
 
-    if( controlPWM > MAX_PWM )
-        controlPWM = MAX_PWM;
-
-    if( controlPWM < MIN_PWM )
-        controlPWM = MIN_PWM;
-#endif
 }
 
 void BLDC::ChangeDirection(bool _forward)

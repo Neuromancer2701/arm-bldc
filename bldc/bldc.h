@@ -87,7 +87,7 @@ public:
     enum constants
     {
         NUMBER_HALLS = 3,
-        PWM_FREQUENCY = 100,
+        PWM_PERIOD_MS = 2,
         COMMUTATION_STATES = 6,
         DUTY_STOP = 0,
         AL_HIGH_PORTB = 0x10,
@@ -121,17 +121,20 @@ private:
     BusOut LowSide;
     BusIn  HallIO;
 
-    array<int, COMMUTATION_STATES> HallStates = {State1, State2, State3, State4, State5, State6};
-    array<int, COMMUTATION_STATES> LowSideStates = {A_LOW, B_LOW, C_LOW};
-    array<int, COMMUTATION_STATES> HighSideStates = {A_HIGH, B_HIGH, C_HIGH};
     map<int, pair<int, int> >  commutationMap;
+    array<int, COMMUTATION_STATES> HighSideStates = {A_HIGH, B_HIGH, B_HIGH, C_HIGH, C_HIGH, A_HIGH};
+    array<int, COMMUTATION_STATES> LowSideStates  = {C_LOW,  C_LOW,  A_LOW,  A_LOW,  B_LOW,  B_LOW};
+
+
+    map<commumationStates, commumationStates >  forward2Reverse;
+    array<commumationStates, COMMUTATION_STATES>  forwardSequence = {State1, State2, State3, State4, State5, State6};
+    array<commumationStates, COMMUTATION_STATES>  reverseSequence = {State4, State5, State6, State1, State2, State3};
 
     void startMotor(bool start);
 	void ChangeDirection(bool forward);
     int  findIndex(commumationStates state);
 	void CalculatePWM();
     void SetStateIO();
-    void SetPWMState();
 
 
 
