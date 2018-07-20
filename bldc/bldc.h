@@ -76,7 +76,6 @@ public:
 
     void setNewCommunationState(commumationStates NewCommunationState) { newCommunationState = NewCommunationState; }
 
-    int* getRawHallData();
 	void FullCycleTest();
 	void InputTest();
     void Reverse(){data.forward = false;}
@@ -101,16 +100,15 @@ public:
 
 private:
 
-    volatile int RawHallData[NUMBER_HALLS];
     commumationStates currentCommunationState;
     commumationStates newCommunationState;
     int cycleCounter;
 
 	DataTransport data;
     Comms communication;
-    long previousTime;
-    long currentTime;
-    long directionWindow;
+    unsigned long long previousTime;
+    unsigned long long currentTime;
+    unsigned long long directionWindow;
 
 	double error;
 	double previousError;
@@ -132,7 +130,7 @@ private:
 
     void startMotor(bool start);
 	void ChangeDirection(bool forward);
-    int  findIndex(commumationStates state);
+    commumationStates nextState();
 	void CalculatePWM();
     void SetStateIO();
 

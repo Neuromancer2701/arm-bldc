@@ -3,6 +3,7 @@
 //
 
 #include "utils.h"
+#include "mbed.h"
 
 #include <algorithm>
 using std::for_each;
@@ -44,4 +45,22 @@ vector<int> utils::range(const int last)
     for_each(begin(sequence), end(sequence), [&](int &n){ n = counter; counter += step;});
 
     return sequence;
+}
+
+
+volatile unsigned long long  _millis;
+
+void millisStart(void)
+{
+    SysTick_Config(SystemCoreClock / 1000);
+}
+
+extern "C" void SysTick_Handler(void)
+{
+    _millis++;
+}
+
+unsigned long long millis(void)
+{
+    return _millis;
 }

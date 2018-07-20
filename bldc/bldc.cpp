@@ -45,6 +45,7 @@ BLDC::~BLDC()
 void BLDC::initPWM()
 {
     communication.startup();
+    millisStart();
 
     for( auto& index:utils::range(FET_IO))
     {
@@ -178,42 +179,39 @@ void BLDC::SetStateIO()
 }
 
 
-int *BLDC::getRawHallData()
-{
-    return (int *)RawHallData;
-}
-
-
 void BLDC::startMotor(bool start)
 {
-    #if 0
 
     if(start)
     {
-        started = true;
+        data.started = true;
         ReadHalls();
-        currentCommunationState = startSeqeunce[(findIndex(newCommunationState) + 1) % COMMUTATION_STATES]; // make sure the two starting states are different.
+        nextState(); // make sure the two starting states are different.
     }
     else
     {
         currentCommunationState = newCommunationState = State1;
-        controlPWM = DUTY_STOP;
-        started = false;
+        data.controlPWM = DUTY_STOP;
+        data.started = false;
     }
-#endif
 }
 
-int BLDC::findIndex(commumationStates state)
+commumationStates BLDC::nextState()
 {
-#if 0
-    for(int i = 0;i < COMMUTATION_STATES; i++)
+    if(newCommunationState == State6)
     {
-        if(startSeqeunce[i] == state)
-            return i;
+        currentCommunationState = State1;
+    }
+    else
+    {
+        currentCommunationState = newCommunationState + 1;
     }
 
-#endif
-return 1;
+
+    if(!data.forward)  //reverse
+    {
+        currentCommunationState = forward2Reverse[currentCommunationState];
+    }
 }
 
 
@@ -235,13 +233,13 @@ void BLDC::CalculatePWM()
 
 void BLDC::ChangeDirection(bool _forward)
 {
-#if 0
-    if(_forward == forward)
+
+    if(_forward == data.forward)
         return;
 
     startMotor(false);
     directionState = CHANGING;
-    forward = _forward;
-#endif
+    data.forward = _forward;
+
 }
 

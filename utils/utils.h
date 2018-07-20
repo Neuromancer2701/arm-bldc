@@ -17,4 +17,7 @@ public:
 };
 
 
+void           millisStart(void);
+unsigned long long  millis(void);
+
 #endif //ARM_BLDC_UTILS_H
