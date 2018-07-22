@@ -52,13 +52,13 @@ volatile unsigned long long  _millis;
 
 void millisStart(void)
 {
-    SysTick_Config(SystemCoreClock / 1000);
+    //SysTick_Config(SystemCoreClock / 1000);
 }
 
-extern "C" void SysTick_Handler(void)
+/*extern "C" void SysTick_Handler(void)
 {
     _millis++;
-}
+}*/
 
 unsigned long long millis(void)
 {

@@ -114,7 +114,7 @@ private:
 	double previousError;
 
 	array<unique_ptr<PwmOut>, FET_IO> HighSide;
-    array<int, FET_IO> HighSide_pins = {A_HIGH, B_HIGH, C_HIGH};
+    array<PinName, FET_IO> HighSide_pins = {D11 /*A_HIGH*/, D10/*B_HIGH*/, D9/*C_HIGH*/};
 
     BusOut LowSide;
     BusIn  HallIO;
@@ -130,7 +130,7 @@ private:
 
     void startMotor(bool start);
 	void ChangeDirection(bool forward);
-    commumationStates nextState();
+    void nextState();
 	void CalculatePWM();
     void SetStateIO();
 

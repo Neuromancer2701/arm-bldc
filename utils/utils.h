@@ -9,6 +9,11 @@
 
 using std::vector;
 
+#ifndef TWO_PI
+#define TWO_PI           2*3.14159265358979323846
+#endif
+
+
 class utils
 {
 public:

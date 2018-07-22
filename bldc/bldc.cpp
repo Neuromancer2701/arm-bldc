@@ -10,8 +10,8 @@ using std::clamp;
 
 
 
-BLDC::BLDC():LowSide(static_cast<PinName>(C_LOW), static_cast<PinName>(B_LOW), static_cast<PinName>(C_LOW)),
-             HallIO(static_cast<PinName>(HALL3), static_cast<PinName>(HALL2), static_cast<PinName>(HALL3))
+BLDC::BLDC():LowSide(D5/*C_LOW*/, D6 /*B_LOW*/, D7 /*A_LOW*/),
+             HallIO(D2/*HALL3*/, D3/*HALL2*/, D4/*HALL1*/)
 {
     cycleCounter = 0;
 
@@ -63,66 +63,65 @@ void BLDC::ReadHalls()
 
 void BLDC::Control()
 {
-#if 0
+
     ReadHalls();
-    if(started || directionState == CHANGING)
+    if(data.started || directionState == CHANGING)
     {
         CalculateCommutationState();
     }
-#endif
+
     communication.ProcessMessages();
 }
 
 void BLDC::InputTest()
 {
-#if 0
-    controlPWM = 50;
+
+    data.controlPWM = 50;
     ReadHalls();
     currentCommunationState = newCommunationState;
     SetStateIO();
 
-    delay(100);
-#endif
+    wait_ms(100);
 }
 
 void BLDC::FullCycleTest()
 {
-#if 0
-    controlPWM = 50;
+
+    data.controlPWM = 50;
     unsigned long Delay = 1000;
 
-    forward = true;
+    data.forward = true;
 
     currentCommunationState = State1;
     SetStateIO();
-    delay(Delay);
+    wait_ms(Delay);
 
     currentCommunationState = State2;
     SetStateIO();
-    delay(Delay);
+    wait_ms(Delay);
 
     currentCommunationState = State3;
     SetStateIO();
-    delay(Delay);
+    wait_ms(Delay);
 
     currentCommunationState = State4;
     SetStateIO();
-    delay(Delay);
+    wait_ms(Delay);
 
     currentCommunationState = State5;
     SetStateIO();
-    delay(Delay);
+    wait_ms(Delay);
 
     currentCommunationState = State6;
     SetStateIO();
-    delay(Delay);
-#endif
+    wait_ms(Delay);
+
 }
 
 
 void BLDC::CalculateCommutationState()
 {
-#if 0
+
     if(newCommunationState == currentCommunationState)
     {
         previousTime = currentTime;
@@ -130,7 +129,7 @@ void BLDC::CalculateCommutationState()
 
         if((directionState == CHANGING) && currentTime > directionWindow)
         {
-            directionState  = forward ? FORWARD : REVERSE;
+            directionState  = data.forward ? FORWARD : REVERSE;
             startMotor(true);
         }
 
@@ -143,10 +142,10 @@ void BLDC::CalculateCommutationState()
 
         previousTime = currentTime;
         currentTime = millis();
-        velocity = TWO_PI * (RADIUS/(double)1000) * ((1/(double)CYCLES_PER_REV)/((currentTime - previousTime)/(double)1000));
+        data.velocity = TWO_PI * (RADIUS/(double)1000) * ((1/(double)CYCLES_PER_REV)/((currentTime - previousTime)/(double)1000));
 
-        PORTB = 0x00; //clear io to give a bit of rest time between states. To prevent shoot through.
-        Palatis::SoftPWM.allOff();
+        LowSide.write(0x00);
+        for_each(begin(HighSide),end(HighSide),[](auto& pwm){pwm.get()->write(0.0);});  //Clear all PWMs
 
         if(directionState != CHANGING)  // changing direction do not calculate PWM
         {
@@ -160,14 +159,13 @@ void BLDC::CalculateCommutationState()
 
     //sprintf(data,"state: %d cycle count: %d velocity: %05d", currentCommunationState, cycleCounter,(int)(velocity * 1000));
     SetStateIO();
-#endif
 }
 
 void BLDC::SetStateIO()
 {
 
     LowSide.write(0x00);
-    for_each(begin(HighSide),end(HighSide),[](auto pwm){pwm.get()->write(0.0);});  //Clear all PWMs
+    for_each(begin(HighSide),end(HighSide),[](auto& pwm){pwm.get()->write(0.0);});  //Clear all PWMs
 
     auto& [highindex, lowsetting] = commutationMap[currentCommunationState];
 
@@ -196,7 +194,7 @@ void BLDC::startMotor(bool start)
     }
 }
 
-commumationStates BLDC::nextState()
+void BLDC::nextState()
 {
     if(newCommunationState == State6)
     {
@@ -204,7 +202,8 @@ commumationStates BLDC::nextState()
     }
     else
     {
-        currentCommunationState = newCommunationState + 1;
+        auto pos = distance(begin(forwardSequence), find(begin(forwardSequence), end(forwardSequence), newCommunationState)) + 1;  //next position
+        currentCommunationState =  forwardSequence[pos];
     }
 
 
@@ -225,9 +224,9 @@ void BLDC::CalculatePWM()
 
     double controlPWMStep = (data.P_gain * error) + (data.I_gain * ((previousError + error)/2));
 
-    controlPWMStep = clamp(controlPWMStep, MAX_PWM_STEP/-1.0, MAX_PWM_STEP/1.0);
+    controlPWMStep = clamp(controlPWMStep, static_cast<double >(MAX_PWM_STEP/-1.0), static_cast<double >(MAX_PWM_STEP/1.0));
 
-    data.controlPWM = clamp(data.controlPWM + static_cast<unsigned char>(controlPWMStep),MIN_PWM);
+    data.controlPWM = clamp(static_cast<unsigned char>(data.controlPWM) + static_cast<unsigned char>(controlPWMStep),static_cast<int>(MIN_PWM), static_cast<int>(MAX_PWM));
 
 }
 
