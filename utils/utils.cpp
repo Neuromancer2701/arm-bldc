@@ -46,21 +46,3 @@ vector<int> utils::range(const int last)
 
     return sequence;
 }
-
-
-volatile unsigned long long  _millis;
-
-void millisStart(void)
-{
-    //SysTick_Config(SystemCoreClock / 1000);
-}
-
-/*extern "C" void SysTick_Handler(void)
-{
-    _millis++;
-}*/
-
-unsigned long long millis(void)
-{
-    return _millis;
-}

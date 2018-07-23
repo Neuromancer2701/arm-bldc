@@ -21,8 +21,4 @@ public:
     static vector<int> range(const int last);
 };
 
-
-void           millisStart(void);
-unsigned long long  millis(void);
-
 #endif //ARM_BLDC_UTILS_H

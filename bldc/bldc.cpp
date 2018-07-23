@@ -20,8 +20,9 @@ BLDC::BLDC():LowSide(D5/*C_LOW*/, D6 /*B_LOW*/, D7 /*A_LOW*/),
     currentCommunationState = State6;
     newCommunationState =  State6;
 
-    previousTime = 0;
-    currentTime = 0;
+    deltaT = 0;
+    speedTimer.start();
+
     error = previousError = 0.0;
     communication.setData(data);
 
@@ -45,7 +46,6 @@ BLDC::~BLDC()
 void BLDC::initPWM()
 {
     communication.startup();
-    millisStart();
 
     for( auto& index:utils::range(FET_IO))
     {
@@ -124,10 +124,7 @@ void BLDC::CalculateCommutationState()
 
     if(newCommunationState == currentCommunationState)
     {
-        previousTime = currentTime;
-        currentTime = millis();
-
-        if((directionState == CHANGING) && currentTime > directionWindow)
+        if((directionState == CHANGING) && speedTimer.read_ms() > directionWindow)
         {
             directionState  = data.forward ? FORWARD : REVERSE;
             startMotor(true);
@@ -140,9 +137,8 @@ void BLDC::CalculateCommutationState()
         currentCommunationState = newCommunationState;
         cycleCounter++;
 
-        previousTime = currentTime;
-        currentTime = millis();
-        data.velocity = TWO_PI * (RADIUS/(double)1000) * ((1/(double)CYCLES_PER_REV)/((currentTime - previousTime)/(double)1000));
+        delta_T();
+        data.velocity = TWO_PI * (RADIUS/(double)1000) * ((1/(double)CYCLES_PER_REV)/((deltaT)/(double)1000));
 
         LowSide.write(0x00);
         for_each(begin(HighSide),end(HighSide),[](auto& pwm){pwm.get()->write(0.0);});  //Clear all PWMs
@@ -220,13 +216,13 @@ void BLDC::CalculatePWM()
 
     previousError = error;
     error = data.targetVelocity - data.velocity;
-    directionWindow = millis() + SAMPLE_WINDOW_MS;
+    directionWindow = speedTimer.read_ms() + SAMPLE_WINDOW_MS;
 
     double controlPWMStep = (data.P_gain * error) + (data.I_gain * ((previousError + error)/2));
 
     controlPWMStep = clamp(controlPWMStep, static_cast<double >(MAX_PWM_STEP/-1.0), static_cast<double >(MAX_PWM_STEP/1.0));
 
-    data.controlPWM = clamp(static_cast<unsigned char>(data.controlPWM) + static_cast<unsigned char>(controlPWMStep),static_cast<int>(MIN_PWM), static_cast<int>(MAX_PWM));
+    data.controlPWM = clamp(data.controlPWM + static_cast<unsigned char>(controlPWMStep),static_cast<int>(MIN_PWM), static_cast<int>(MAX_PWM));
 
 }
 

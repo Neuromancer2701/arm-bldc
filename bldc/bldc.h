@@ -106,9 +106,8 @@ private:
 
 	DataTransport data;
     Comms communication;
-    unsigned long long previousTime;
-    unsigned long long currentTime;
-    unsigned long long directionWindow;
+    int deltaT;
+    int directionWindow;
 
 	double error;
 	double previousError;
@@ -151,8 +150,15 @@ private:
 	};
 
 	changeDirection directionState;
+	Timer speedTimer;
 
-
+	void delta_T()
+    {
+        speedTimer.stop();
+        deltaT = speedTimer.read_ms();
+        speedTimer.reset();
+        speedTimer.start();
+	}
 };
 
 
