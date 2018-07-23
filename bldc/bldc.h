@@ -9,11 +9,13 @@
 
 #include <mbed.h>
 #include <memory>
+#include <algorithm>
 #include <map>
 #include "comms.h"
 
 using std::unique_ptr;
 using std::map;
+using std::for_each;
 
 
 enum commumationStates
@@ -81,6 +83,8 @@ public:
     void Reverse(){data.forward = false;}
     void Forward(){data.forward = true;}
     void ReadHalls();
+    void LaunchSerialThread();
+    void MonitorSerial();
 
 
     enum constants
@@ -104,7 +108,7 @@ private:
     commumationStates newCommunationState;
     int cycleCounter;
 
-	DataTransport data;
+    DataTransport data;
     Comms communication;
     int deltaT;
     int directionWindow;

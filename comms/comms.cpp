@@ -135,14 +135,14 @@ void Comms::ReadorWrite(auto read, auto write)
 
 void Comms::parseTargetVelocity()
 {
-    auto read = [&](){Send((int)(data.targetVelocity * MULTIPLIER));};
+    auto read = [&](){Send((int)(localSerialdata.targetVelocity * MULTIPLIER));};
     auto write = [&]()
     {
         char velocity[2];
 
         velocity[0] = serialBuffer[0];
         velocity[1] = serialBuffer[1];
-        data.targetVelocity = clamp(atof(velocity)/div, MIN_V, MAX_V);
+        localSerialdata.targetVelocity = clamp(atof(velocity)/div, MIN_V, MAX_V);
     };
 
     ReadorWrite(read, write);
@@ -150,20 +150,20 @@ void Comms::parseTargetVelocity()
 
 void Comms::parseVelocity()
 {
-    Send((int)(data.velocity * MULTIPLIER));
+    Send((int)(localSerialdata.velocity * MULTIPLIER));
 }
 
 void Comms::parsePWM()
 {
-    Send(data.controlPWM);
+    Send(localSerialdata.controlPWM);
 }
 
 void Comms::parseGains()
 {
     auto read = [&]()
     {
-        Send((int)(data.P_gain * MULTIPLIER));
-        Send((int)(data.I_gain * MULTIPLIER));
+        Send((int)(localSerialdata.P_gain * MULTIPLIER));
+        Send((int)(localSerialdata.I_gain * MULTIPLIER));
     };
     auto write = [&]()
     {
@@ -171,11 +171,11 @@ void Comms::parseGains()
         string p_string(begin(serialBuffer),begin(serialBuffer)+GAIN_SIZE);
         string i_string(begin(serialBuffer)+GAIN_SIZE,begin(serialBuffer)+(2*GAIN_SIZE));
 
-        data.P_gain = stod(p_string)/MULTIPLIER;
-        data.I_gain = stod(i_string)/MULTIPLIER;
+        localSerialdata.P_gain = stod(p_string)/MULTIPLIER;
+        localSerialdata.I_gain = stod(i_string)/MULTIPLIER;
 
-        data.P_gain = clamp(data.P_gain, 0.1, 10.0);
-        data.I_gain = clamp(data.I_gain, 0.1, 10.0);
+        localSerialdata.P_gain = clamp(localSerialdata.P_gain, 0.1, 10.0);
+        localSerialdata.I_gain = clamp(localSerialdata.I_gain, 0.1, 10.0);
     };
 
     ReadorWrite(read, write);
@@ -183,18 +183,18 @@ void Comms::parseGains()
 
 void Comms::parseCurrent()
 {
-    Send((int)(data.current * MULTIPLIER));
+    Send((int)(localSerialdata.current * MULTIPLIER));
 }
 
 void Comms::parseStart()
 {
     auto read = [&]()
     {
-        Send((int)data.started);
+        Send((int)localSerialdata.started);
     };
     auto write = [&]()
     {
-        data.started = (serialBuffer[0] == '1');
+        localSerialdata.started = (serialBuffer[0] == '1');
     };
 
     ReadorWrite(read, write);
@@ -204,23 +204,27 @@ void Comms::parseDirection()
 {
     auto read = [&]()
     {
-        Send((int)data.forward);
+        Send((int)localSerialdata.forward);
     };
     auto write = [&]()
     {
-       data.forward = (serialBuffer[0] == '1');
+       localSerialdata.forward = (serialBuffer[0] == '1');
     };
 
     ReadorWrite(read, write);
 }
 
-const DataTransport &Comms::getData() const
+void Comms::getData(DataTransport &data)
 {
-    return data;
+    dataMutex.lock();
+    data = localSerialdata;
+    dataMutex.unlock();
 }
 
-void Comms::setData(const DataTransport &data)
+void Comms::setData(const DataTransport data)
 {
-    Comms::data = data;
+    dataMutex.lock();
+    localSerialdata = data;
+    dataMutex.unlock();
 }
 

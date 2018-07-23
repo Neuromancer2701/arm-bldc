@@ -24,7 +24,7 @@ BLDC::BLDC():LowSide(D5/*C_LOW*/, D6 /*B_LOW*/, D7 /*A_LOW*/),
     speedTimer.start();
 
     error = previousError = 0.0;
-    communication.setData(data);
+
 
     for( auto& index:utils::range(FET_IO))
     {
@@ -70,7 +70,10 @@ void BLDC::Control()
         CalculateCommutationState();
     }
 
+
+    communication.setData(data); // Update data transport from
     communication.ProcessMessages();
+    communication.getData(data); // Update data transport from
 }
 
 void BLDC::InputTest()

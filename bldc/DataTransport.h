@@ -5,8 +5,8 @@
 #ifndef ARM_BLDC_DATATRANSPORT_H
 #define ARM_BLDC_DATATRANSPORT_H
 
-
-class DataTransport {
+class DataTransport
+{
 
 public:
     bool forward;

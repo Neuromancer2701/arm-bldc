@@ -8,7 +8,8 @@
 #include <array>
 #include <functional>
 #include "DataTransport.h"
-#include "mbed.h"
+#include <mbed.h>
+
 
 using std::vector;
 using std::function;
@@ -20,8 +21,8 @@ public:
 
     virtual ~Comms() = default;
     void ProcessMessages();
-    const DataTransport &getData() const;
-    void setData(const DataTransport &data);
+    void getData(DataTransport& data);
+    void setData(DataTransport data);
     void startup() {serial.puts("Starting up Comms\n");}
     
 private:
@@ -70,8 +71,10 @@ private:
     array<char, BUFFER_SIZE>    staticBuffer;
     unsigned char               counter;
     RawSerial                   serial;
+    Mutex                       dataMutex;
     bool                        messageReceived;
-    DataTransport               data;
+    DataTransport               localSerialdata;
+
 
     double div;
     double MAX_V;
