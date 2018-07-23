@@ -159,6 +159,8 @@ private:
         speedTimer.reset();
         speedTimer.start();
 	}
+
+    void clearAllPwm() { for_each(begin(HighSide), end(HighSide), [](auto& pwm){pwm.get()->write(0.0);});}  //Clear all PWMs
 };
 
 

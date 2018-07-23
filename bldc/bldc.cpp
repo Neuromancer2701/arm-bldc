@@ -141,7 +141,7 @@ void BLDC::CalculateCommutationState()
         data.velocity = TWO_PI * (RADIUS/(double)1000) * ((1/(double)CYCLES_PER_REV)/((deltaT)/(double)1000));
 
         LowSide.write(0x00);
-        for_each(begin(HighSide),end(HighSide),[](auto& pwm){pwm.get()->write(0.0);});  //Clear all PWMs
+        clearAllPwm();
 
         if(directionState != CHANGING)  // changing direction do not calculate PWM
         {
@@ -161,7 +161,7 @@ void BLDC::SetStateIO()
 {
 
     LowSide.write(0x00);
-    for_each(begin(HighSide),end(HighSide),[](auto& pwm){pwm.get()->write(0.0);});  //Clear all PWMs
+    clearAllPwm();
 
     auto& [highindex, lowsetting] = commutationMap[currentCommunationState];
 
@@ -171,7 +171,6 @@ void BLDC::SetStateIO()
     HighSide[highindex].get()->write(data.controlPWM);
     LowSide.write(lowsetting);
 }
-
 
 void BLDC::startMotor(bool start)
 {
