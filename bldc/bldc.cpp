@@ -53,6 +53,7 @@ void BLDC::initPWM()
         HighSide[index].get()->write(0.0);
     }
 
+    LaunchSerialThread();
 }
 
 void BLDC::ReadHalls()
@@ -63,7 +64,6 @@ void BLDC::ReadHalls()
 
 void BLDC::Control()
 {
-
     ReadHalls();
     if(data.started || directionState == CHANGING)
     {
