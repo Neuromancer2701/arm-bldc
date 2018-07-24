@@ -84,7 +84,7 @@ public:
     void Forward(){data.forward = true;}
     void ReadHalls();
     void LaunchSerialThread();
-    void MonitorSerial();
+    static void MonitorSerial(void *commObject);
 
 
     enum constants
@@ -130,14 +130,13 @@ private:
     map<commumationStates, commumationStates >  forward2Reverse;
     array<commumationStates, COMMUTATION_STATES>  forwardSequence = {State1, State2, State3, State4, State5, State6};
     array<commumationStates, COMMUTATION_STATES>  reverseSequence = {State4, State5, State6, State1, State2, State3};
+    Thread serialThread;
 
     void startMotor(bool start);
 	void ChangeDirection(bool forward);
     void nextState();
 	void CalculatePWM();
     void SetStateIO();
-
-
 
 	enum velocityConstants
 	{

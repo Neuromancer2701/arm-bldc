@@ -69,11 +69,6 @@ void BLDC::Control()
     {
         CalculateCommutationState();
     }
-
-
-    communication.setData(data); // Update data transport from
-    communication.ProcessMessages();
-    communication.getData(data); // Update data transport from
 }
 
 void BLDC::InputTest()
@@ -238,5 +233,23 @@ void BLDC::ChangeDirection(bool _forward)
     directionState = CHANGING;
     data.forward = _forward;
 
+}
+
+void BLDC::LaunchSerialThread()
+{
+    serialThread.start(callback(BLDC::MonitorSerial, this));
+}
+
+void BLDC::MonitorSerial(void *commObject)
+
+{
+    BLDC* ptr = static_cast<BLDC*>(commObject);
+
+    while(1)
+    {
+        ptr->communication.setData(ptr->data); // Update data transport to
+        ptr->communication.ProcessMessages();
+        ptr->communication.getData(ptr->data); // Update data transport from
+    }
 }
 
