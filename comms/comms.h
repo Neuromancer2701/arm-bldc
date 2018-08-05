@@ -24,6 +24,7 @@ public:
     void getData(DataTransport& data);
     void setData(DataTransport data);
     void startup() {serial.puts("Starting up Comms\n");}
+    void puts(auto buffer){serial.puts(buffer);}
     
 private:
 
@@ -36,6 +37,7 @@ private:
     void parseCurrent();
     void parseStart();
     void parseDirection();
+    void parseHalls();
     void messageReceive();
     void Send(int data);
 
@@ -50,6 +52,7 @@ private:
         PWM              = 'P',             //BPQ
         GAINS            = 'G',             //BGW77007700Q BGW01000100Q BGW00000000Q BGRQ
         CURRENT          = 'C',             //BCQ
+        HALLS            = 'H',             //BHQ
         START            = 'S',             //BSW1Q BSW0Q BSRQ
         DIRECTION        = 'D',             //BDW1Q BDW0Q BDRQ
         READ             = 'R',

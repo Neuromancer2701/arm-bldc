@@ -11,7 +11,7 @@ int main()
 
     while(1)
     {
-      motor.Control();
+      motor.FullCycleTest();
     };
 
 }

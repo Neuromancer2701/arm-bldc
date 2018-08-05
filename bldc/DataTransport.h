@@ -17,6 +17,7 @@ public:
     double targetVelocity;
     unsigned char controlPWM;
     double current;
+    int rawHalls;
 
     DataTransport()
     {
@@ -28,6 +29,7 @@ public:
         targetVelocity = 0.0;
         controlPWM = 0;
         current = 0.0;
+        rawHalls = 0x00;
     }
 };
 

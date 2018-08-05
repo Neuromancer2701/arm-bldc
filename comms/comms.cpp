@@ -78,6 +78,9 @@ void Comms::Parse()
             case DIRECTION:
                 parseDirection();
                 break;
+            case HALLS:
+                parseHalls();
+                break;
             default:
                 break;
         }
@@ -156,6 +159,11 @@ void Comms::parseVelocity()
 void Comms::parsePWM()
 {
     Send(localSerialdata.controlPWM);
+}
+
+void Comms::parseHalls()
+{
+    Send(localSerialdata.rawHalls);
 }
 
 void Comms::parseGains()

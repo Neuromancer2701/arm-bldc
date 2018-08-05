@@ -116,15 +116,15 @@ private:
 	double error;
 	double previousError;
 
-	array<unique_ptr<PwmOut>, FET_IO> HighSide;
+    array<unique_ptr<PwmOut>, FET_IO> HighSide;
     array<PinName, FET_IO> HighSide_pins = {D11 /*A_HIGH*/, D10/*B_HIGH*/, D9/*C_HIGH*/};
 
     BusOut LowSide;
     BusIn  HallIO;
 
     map<int, pair<int, int> >  commutationMap;
-    array<int, COMMUTATION_STATES> HighSideStates = {A_HIGH, B_HIGH, B_HIGH, C_HIGH, C_HIGH, A_HIGH};
-    array<int, COMMUTATION_STATES> LowSideStates  = {C_LOW,  C_LOW,  A_LOW,  A_LOW,  B_LOW,  B_LOW};
+    array<int, COMMUTATION_STATES> HighSideStates = {PWM_A, PWM_B, PWM_B, PWM_C, PWM_C, PWM_A};
+    array<int, COMMUTATION_STATES> LowSideStates  = {C_ON,  C_ON,  A_ON,  A_ON,  B_ON,  B_ON};
 
 
     map<commumationStates, commumationStates >  forward2Reverse;

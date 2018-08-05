@@ -10,7 +10,8 @@ using std::clamp;
 
 
 
-BLDC::BLDC():LowSide(D5/*C_LOW*/, D6 /*B_LOW*/, D7 /*A_LOW*/),
+BLDC::BLDC()://Phase_A(D11),Phase_B(D10),Phase_C(D9),
+             LowSide(D5/*C_LOW*/, D6 /*B_LOW*/, D7 /*A_LOW*/),
              HallIO(D2/*HALL3*/, D3/*HALL2*/, D4/*HALL1*/)
 {
     cycleCounter = 0;
@@ -25,11 +26,13 @@ BLDC::BLDC():LowSide(D5/*C_LOW*/, D6 /*B_LOW*/, D7 /*A_LOW*/),
 
     error = previousError = 0.0;
 
+    communication.puts("Make PWM objects\n");
 
     for( auto& index:utils::range(FET_IO))
     {
         HighSide[index] = make_unique<PwmOut>(HighSide_pins[index]);
     }
+    communication.puts("after PWM objects made!!!\n");
 
     for( auto& index:utils::range(COMMUTATION_STATES))
     {
@@ -53,12 +56,14 @@ void BLDC::initPWM()
         HighSide[index].get()->write(0.0);
     }
 
-    LaunchSerialThread();
+    //LaunchSerialThread();
 }
 
 void BLDC::ReadHalls()
 {
-    newCommunationState = static_cast<commumationStates>(HallIO.read());
+    data.rawHalls = HallIO.read();
+    newCommunationState = static_cast<commumationStates>(data.rawHalls);
+
 }
 
 
@@ -74,7 +79,7 @@ void BLDC::Control()
 void BLDC::InputTest()
 {
 
-    data.controlPWM = 50;
+    data.controlPWM = 75;
     ReadHalls();
     currentCommunationState = newCommunationState;
     SetStateIO();
@@ -85,15 +90,16 @@ void BLDC::InputTest()
 void BLDC::FullCycleTest()
 {
 
-    data.controlPWM = 50;
-    unsigned long Delay = 1000;
-
+    data.controlPWM = 75;
     data.forward = true;
+
+    unsigned long Delay = 1000;
 
     currentCommunationState = State1;
     SetStateIO();
     wait_ms(Delay);
 
+    /*
     currentCommunationState = State2;
     SetStateIO();
     wait_ms(Delay);
@@ -113,7 +119,7 @@ void BLDC::FullCycleTest()
     currentCommunationState = State6;
     SetStateIO();
     wait_ms(Delay);
-
+*/
 }
 
 
@@ -163,11 +169,13 @@ void BLDC::SetStateIO()
 
     auto& [highindex, lowsetting] = commutationMap[currentCommunationState];
 
-    //char data[256];
-    //sprintf(data,"hideIndex: %d PORTB: %02x Forward: %s", highSideIndex, lowSide, forward ? "true" : "false");
-    //Serial.println(data);
-    HighSide[highindex].get()->write(data.controlPWM);
+    char buffer[256];
+    sprintf(buffer,"hideIndex: %d Low: %02x PWM: %f\n", highindex, lowsetting, data.controlPWM/static_cast<float>(100.0));
+    communication.puts(buffer);
+    HighSide[highindex].get()->write(data.controlPWM/static_cast<float>(100.0));
+    communication.puts("After PWM\n");
     LowSide.write(lowsetting);
+    communication.puts("After IO\n");
 }
 
 void BLDC::startMotor(bool start)
